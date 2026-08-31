@@ -78,29 +78,24 @@ jobs:
             | jq -r '.packages[] | [.name, .version, .manifest_path] | @tsv')
 
           while IFS=$'\t' read -r NAME VERSION MANIFEST_PATH; do
-            echo "Checking $NAME@$VERSION..."
+            echo "Publishing $NAME@$VERSION..."
 
-            STATUS=$(curl --silent --output /dev/null --write-out "%{http_code}" \
-              "https://crates.io/api/v1/crates/$NAME/$VERSION")
+            OUTPUT=$(cargo publish \
+              --manifest-path "$MANIFEST_PATH" 2>&1) || STATUS=$?
 
-            case "$STATUS" in
-              200)
-                echo "$NAME@$VERSION already exists on crates.io. Skipping."
-                ;;
+            echo "$OUTPUT"
 
-              404)
-                echo "$NAME@$VERSION does not exist. Publishing..."
+            if [ -z "$STATUS" ]; then
+              echo "$NAME@$VERSION published successfully."
+              continue
+            fi
 
-                cargo publish \
-                  --manifest-path "$MANIFEST_PATH"
+            if echo "$OUTPUT" | grep -q "already exists"; then
+              echo "$NAME@$VERSION already exists on crates.io. Skipping."
+              unset STATUS
+              continue
+            fi
 
-                echo "$NAME@$VERSION published."
-                ;;
-
-              *)
-                echo "Failed to check $NAME@$VERSION."
-                echo "crates.io returned HTTP $STATUS."
-                exit 1
-                ;;
-            esac
+            echo "Failed to publish $NAME@$VERSION."
+            exit "$STATUS"
           done <<< "$PACKAGES"
