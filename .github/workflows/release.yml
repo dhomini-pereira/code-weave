@@ -80,36 +80,27 @@ jobs:
           while IFS=$'\t' read -r NAME VERSION MANIFEST_PATH; do
             echo "Checking $NAME@$VERSION..."
 
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            STATUS=$(curl --silent --output /dev/null --write-out "%{http_code}" \
               "https://crates.io/api/v1/crates/$NAME/$VERSION")
 
-            if [ "$STATUS" = "200" ]; then
-              echo "$NAME@$VERSION already exists on crates.io. Skipping."
-              continue
-            fi
+            case "$STATUS" in
+              200)
+                echo "$NAME@$VERSION already exists on crates.io. Skipping."
+                ;;
 
-            echo "Publishing $NAME@$VERSION..."
+              404)
+                echo "$NAME@$VERSION does not exist. Publishing..."
 
-            cargo publish \
-              --manifest-path "$MANIFEST_PATH"
+                cargo publish \
+                  --manifest-path "$MANIFEST_PATH"
 
-            echo "Waiting for $NAME@$VERSION to become available..."
+                echo "$NAME@$VERSION published."
+                ;;
 
-            for i in {1..12}; do
-              STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-                "https://crates.io/api/v1/crates/$NAME/$VERSION")
-
-              if [ "$STATUS" = "200" ]; then
-                echo "$NAME@$VERSION is now available."
-                break
-              fi
-
-              echo "Still waiting... ($i/12)"
-              sleep 10
-            done
-
-            if [ "$STATUS" != "200" ]; then
-              echo "Timed out waiting for $NAME@$VERSION to become available."
-              exit 1
-            fi
+              *)
+                echo "Failed to check $NAME@$VERSION."
+                echo "crates.io returned HTTP $STATUS."
+                exit 1
+                ;;
+            esac
           done <<< "$PACKAGES"
