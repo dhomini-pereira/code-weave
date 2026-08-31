@@ -8,4 +8,4 @@ repository = "https://github.com/dhomini-pereira/code-weave"
 readme = "../../README.md"
 
 [dependencies]
-code-weave-core = { version = "0.1.0", path = "../code-weave-core" }
+code-weave-core = { version = "0.1.0" }

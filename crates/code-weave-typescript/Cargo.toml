@@ -1,0 +1,7 @@
+[package]
+name = "code-weave-typescript"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+code-weave-core = { version = "0.2.0", path = "../code-weave-core" }

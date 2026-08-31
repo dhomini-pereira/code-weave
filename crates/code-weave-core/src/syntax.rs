@@ -18,4 +18,8 @@ pub enum SyntaxKind {
     Number,
     Boolean,
     Null,
+    Identifier,
+    Function,
+    Block,
+    Call
 }

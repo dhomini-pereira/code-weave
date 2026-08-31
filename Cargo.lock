@@ -5,21 +5,34 @@ version = 4
 [[package]]
 name = "code-weave-core"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6f90f19ca807af8d609c573c31aad516865f17dd8aff0bd8234c3c0ffd78e9f3"
+
+[[package]]
+name = "code-weave-core"
+version = "0.2.0"
 
 [[package]]
 name = "code-weave-json"
 version = "0.1.0"
 dependencies = [
- "code-weave-core",
+ "code-weave-core 0.1.0",
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "code-weave-typescript"
+version = "0.1.0"
+dependencies = [
+ "code-weave-core 0.2.0",
 ]
 
 [[package]]
 name = "code-weave-yaml"
 version = "0.1.0"
 dependencies = [
- "code-weave-core",
+ "code-weave-core 0.1.0",
 ]
 
 [[package]]
