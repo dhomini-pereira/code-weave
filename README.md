@@ -49,7 +49,8 @@ code-weave/
 ├── crates/
 │   ├── code-weave-core/
 │   ├── code-weave-json/
-│   └── code-weave-yaml/
+│   ├── code-weave-yaml/
+│   └── code-weave-typescript/
 ├── Cargo.toml
 └── README.md
 ```
@@ -146,6 +147,26 @@ This provides a stable structural representation that can be consumed by indexin
 * Hierarchical paths
 * Source spans
 
+### TypeScript
+
+* Variable declarations (const, let, var)
+* Primitive values
+* Object literals
+* Nested objects
+* Arrays
+* Arrays of objects
+* Nested arrays
+* Function declarations
+* Function parameters
+* Function bodies
+* Function calls
+* Function call arguments
+* Comments
+* Arrow functions
+* Structural syntax parsing
+* Source spans
+* Hierarchical syntax nodes
+
 ### Planned
 
 Additional language and data-format support will be added progressively.
@@ -154,7 +175,6 @@ Potential targets include:
 
 * TOML
 * JavaScript
-* TypeScript
 * Python
 * Rust
 * Markdown
@@ -221,6 +241,10 @@ cargo test -p code-weave-json
 cargo test -p code-weave-yaml
 ```
 
+```bash
+cargo test -p code-weave-typescript
+```
+
 ## Testing
 
 Code Weave uses unit tests extensively across the lexer, syntax parser, and chunker layers.
@@ -252,7 +276,8 @@ Current focus:
 Core       ✓
 JSON       ✓
 YAML       ✓
-TOML       → Next
+TypeScript ✓
+JavaScript → Next
 ```
 
 Future work will expand language support and improve the abstractions used for parsing, chunking, indexing, and retrieval.
