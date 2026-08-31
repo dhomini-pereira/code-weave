@@ -21,5 +21,5 @@ pub enum SyntaxKind {
     Identifier,
     Function,
     Block,
-    Call
+    Call,
 }
