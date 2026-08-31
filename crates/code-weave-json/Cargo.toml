@@ -1,0 +1,13 @@
+[package]
+name = "code-weave-json"
+version = "0.1.0"
+edition = "2024"
+description = "JSON parser and formatter for Code Weave."
+license = "MIT"
+repository = "https://github.com/dhomini-pereira/code-weave"
+readme = "../../README.md"
+
+[dependencies]
+code-weave-core = { version = "0.1.0", path = "../code-weave-core" }
+serde_json = "1"
+serde = { version = "1", features = ["derive"] }

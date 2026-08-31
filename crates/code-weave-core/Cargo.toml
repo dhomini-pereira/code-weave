@@ -1,0 +1,10 @@
+[package]
+name = "code-weave-core"
+version = "0.1.0"
+edition = "2024"
+description = "Core functionality for the Code Weave project."
+license = "MIT"
+repository = "https://github.com/dhomini-pereira/code-weave"
+readme = "../../README.md"
+
+[dependencies]
