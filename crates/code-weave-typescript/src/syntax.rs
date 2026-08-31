@@ -227,7 +227,6 @@ impl<'a> TypeScriptSyntaxParser<'a> {
         let first_span = first.span;
 
         let mut name = self.source[first_span.start..first_span.end].to_string();
-        let mut end = first_span.end;
 
         while self.check(TypeScriptTokenKind::Dot) {
             self.advance();
@@ -237,8 +236,6 @@ impl<'a> TypeScriptSyntaxParser<'a> {
 
             name.push('.');
             name.push_str(&self.source[span.start..span.end]);
-
-            end = span.end;
         }
 
         self.expect(TypeScriptTokenKind::OpenParen)?;
@@ -249,7 +246,6 @@ impl<'a> TypeScriptSyntaxParser<'a> {
 
         while !self.is_at_end() && !self.check(TypeScriptTokenKind::CloseParen) {
             let argument = self.parse_value()?;
-            end = argument.span.end;
 
             arguments.push(argument);
 
@@ -264,11 +260,10 @@ impl<'a> TypeScriptSyntaxParser<'a> {
         }
 
         let close_paren = self.expect(TypeScriptTokenKind::CloseParen)?;
-        end = close_paren.span.end;
 
         Some(SyntaxNode {
             kind: SyntaxKind::Call,
-            span: Span::new(start, end),
+            span: Span::new(start, close_paren.span.end),
             name: Some(name),
             children: arguments,
         })
