@@ -69,10 +69,29 @@ jobs:
                   exit 1
                 fi
               done
-
       - name: Publish workspace crates
         shell: bash
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         run: |
-          cargo publish --workspace
+          PACKAGES=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[] | .name')
+
+          for PACKAGE in $PACKAGES; do
+            VERSION=$(cargo metadata --no-deps --format-version 1 \
+              | jq -r --arg PACKAGE "$PACKAGE" \
+              '.packages[] | select(.name == $PACKAGE) | .version')
+
+            echo "Checking $PACKAGE@$VERSION..."
+
+            if cargo search "$PACKAGE" --limit 100 \
+              | grep -q "^$PACKAGE = \"$VERSION\""; then
+              echo "$PACKAGE@$VERSION already exists on crates.io. Skipping."
+              continue
+            fi
+
+            echo "Publishing $PACKAGE@$VERSION..."
+            cargo publish -p "$PACKAGE"
+
+            echo "Waiting for $PACKAGE@$VERSION to become available..."
+            sleep 30
+          done
