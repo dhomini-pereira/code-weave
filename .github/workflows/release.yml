@@ -25,9 +25,6 @@ jobs:
           toolchain: stable
           components: rustfmt
 
-      - name: Install cargo-workspaces
-        uses: taiki-e/install-action@cargo-workspaces
-
       - name: Check formatting
         run: cargo fmt --all -- --check
 
@@ -73,11 +70,9 @@ jobs:
                 fi
               done
 
-      - name: Publish workspace
+      - name: Publish workspace crates
+        shell: bash
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         run: |
-          cargo workspaces publish \
-            --from-cellar \
-            --skip-published \
-            --yes
+          cargo publish --workspace
