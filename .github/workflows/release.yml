@@ -74,24 +74,42 @@ jobs:
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         run: |
-          PACKAGES=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[] | .name')
+          PACKAGES=$(cargo metadata --format-version 1 --no-deps \
+            | jq -r '.packages[] | [.name, .version, .manifest_path] | @tsv')
 
-          for PACKAGE in $PACKAGES; do
-            VERSION=$(cargo metadata --no-deps --format-version 1 \
-              | jq -r --arg PACKAGE "$PACKAGE" \
-              '.packages[] | select(.name == $PACKAGE) | .version')
+          while IFS=$'\t' read -r NAME VERSION MANIFEST_PATH; do
+            echo "Checking $NAME@$VERSION..."
 
-            echo "Checking $PACKAGE@$VERSION..."
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+              "https://crates.io/api/v1/crates/$NAME/$VERSION")
 
-            if cargo search "$PACKAGE" --limit 100 \
-              | grep -q "^$PACKAGE = \"$VERSION\""; then
-              echo "$PACKAGE@$VERSION already exists on crates.io. Skipping."
+            if [ "$STATUS" = "200" ]; then
+              echo "$NAME@$VERSION already exists on crates.io. Skipping."
               continue
             fi
 
-            echo "Publishing $PACKAGE@$VERSION..."
-            cargo publish -p "$PACKAGE"
+            echo "Publishing $NAME@$VERSION..."
 
-            echo "Waiting for $PACKAGE@$VERSION to become available..."
-            sleep 30
-          done
+            cargo publish \
+              --manifest-path "$MANIFEST_PATH"
+
+            echo "Waiting for $NAME@$VERSION to become available..."
+
+            for i in {1..12}; do
+              STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+                "https://crates.io/api/v1/crates/$NAME/$VERSION")
+
+              if [ "$STATUS" = "200" ]; then
+                echo "$NAME@$VERSION is now available."
+                break
+              fi
+
+              echo "Still waiting... ($i/12)"
+              sleep 10
+            done
+
+            if [ "$STATUS" != "200" ]; then
+              echo "Timed out waiting for $NAME@$VERSION to become available."
+              exit 1
+            fi
+          done <<< "$PACKAGES"
