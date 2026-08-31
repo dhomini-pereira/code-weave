@@ -1,0 +1,97 @@
+name: Release
+
+on:
+  release:
+    types:
+      - published
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Publish crates
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          components: rustfmt
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Check workspace
+        run: cargo check --workspace
+
+      - name: Run tests
+        run: cargo test --workspace
+
+      - name: Validate release tag
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid release tag: $RELEASE_TAG"
+            echo "Expected format: vX.Y.Z"
+            exit 1
+          fi
+
+      - name: Validate crate versions
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          VERSION="${RELEASE_TAG#v}"
+
+          CORE_VERSION=$(cargo metadata --no-deps --format-version 1 \
+            | jq -r '.packages[] | select(.name == "code-weave-core") | .version')
+
+          JSON_VERSION=$(cargo metadata --no-deps --format-version 1 \
+            | jq -r '.packages[] | select(.name == "code-weave-json") | .version')
+
+          YAML_VERSION=$(cargo metadata --no-deps --format-version 1 \
+            | jq -r '.packages[] | select(.name == "code-weave-yaml") | .version')
+
+          echo "Release version: $VERSION"
+          echo "code-weave-core: $CORE_VERSION"
+          echo "code-weave-json: $JSON_VERSION"
+          echo "code-weave-yaml: $YAML_VERSION"
+
+          if [ "$CORE_VERSION" != "$VERSION" ]; then
+            echo "code-weave-core version mismatch"
+            exit 1
+          fi
+
+          if [ "$JSON_VERSION" != "$VERSION" ]; then
+            echo "code-weave-json version mismatch"
+            exit 1
+          fi
+
+          if [ "$YAML_VERSION" != "$VERSION" ]; then
+            echo "code-weave-yaml version mismatch"
+            exit 1
+          fi
+
+      - name: Publish code-weave-core
+        run: cargo publish -p code-weave-core
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+      - name: Publish code-weave-json
+        run: cargo publish -p code-weave-json
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+      - name: Publish code-weave-yaml
+        run: cargo publish -p code-weave-yaml
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
